@@ -6,7 +6,7 @@
   "scripts": {
     "compile": "hardhat compile",
     "test": "echo \"Error: no test specified\" && exit 1",
-    "fmt": "prettier --write . --plugin=prettier-plugin-solidity"
+    "fmt": "prettier --write '**/*.(sol|js|ts)' --plugin=prettier-plugin-solidity"
   },
   "author": "Soham Zemse",
   "license": "ISC",
