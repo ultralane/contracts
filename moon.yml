@@ -1,0 +1,28 @@
+language: 'solidity'
+
+dependsOn:
+  - 'circuits'
+  - 'sdk'
+
+tasks:
+  install:
+    command: 'pnpm install'
+  build:
+    command: 'pnpm run compile'
+    deps:
+      - '^:build'
+    inputs:
+      - 'contracts/**/*'
+    outputs:
+      - 'artifacts'
+      - 'cache'
+      - 'typechain-types'
+  test:
+    command: 'pnpm run test'
+    deps:
+      - '^:build'
+      - 'build'
+  clean:
+    command: 'rm -rf artifacts cache typechain-types'
+  fmt:
+    command: 'pnpm fmt'
