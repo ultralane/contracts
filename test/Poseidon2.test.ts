@@ -50,7 +50,7 @@ describe("Poseidon2", function () {
       const actual = await poseidon2.hash_3(
         input1.hex(),
         input2.hex(),
-        input3.hex()
+        input3.hex(),
       );
       expect(toBeHex(actual)).to.equal(expected.hex());
       //   console.log(
