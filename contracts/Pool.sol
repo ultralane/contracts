@@ -6,9 +6,10 @@ import {Create2} from "@openzeppelin/contracts/utils/Create2.sol";
 import {Field, ImplField} from "./libraries/Field.sol";
 import {SplitJoin16Verifier, Hash2Verifier, NoteVerifier} from "./Verifier.sol";
 import {StealthAddress} from "./StealthAddress.sol";
+import {MerkleTreeWithHistory} from "./MerkleTreeWithHistory.sol";
 import "hardhat/console.sol";
 
-contract Pool { 
+contract Pool is MerkleTreeWithHistory {
     using ImplField for Field;
     using ImplField for uint256;
     using ImplField for int256;
@@ -38,7 +39,6 @@ contract Pool {
     SplitJoin16Verifier public splitJoinVerifier;
     Hash2Verifier public hash2Verifier;
     NoteVerifier public noteVerifier;
-    Field public depositsRoot;
 
     mapping(Field nullifier => bool isSpent) public isNoteSpent;
     Field[] public noteCommitments;
@@ -51,35 +51,29 @@ contract Pool {
         Hash2Verifier _hash2Verifier,
         NoteVerifier _noteVerifier,
         IERC20 _usdc
-    ) {
+    ) MerkleTreeWithHistory(16) {
         splitJoinVerifier = _splitJoinVerifier;
         hash2Verifier = _hash2Verifier;
         noteVerifier = _noteVerifier;
         usdc = _usdc;
-        depositsRoot = ZERO_ROOT;
-    }
-
-    function setDepositsRoot(Field newDepositsRoot) external {
-        depositsRoot = newDepositsRoot;
+        _insert(ZERO_COMMITMENT);
     }
 
     function deposit(
         uint amount,
         Field noteCommitment,
-        bytes memory proof,
-        Field newDepositRoot
+        bytes memory proof
     ) external {
-        _createDepositUsingHash3(amount, noteCommitment, proof, newDepositRoot);
+        _createDepositUsingHash3(amount, noteCommitment, proof);
     }
 
     // proving split join takes about 5 seconds
     function transact(
         bytes memory proof,
-        Field[] memory publicInputs,
-        Field newDepositRoot
+        Field[] memory publicInputs
     ) external {
         // verify that the note has not been spent
-        require(publicInputs[0].eq(depositsRoot), "Deposits root mismatch");
+        require(isKnownRoot(publicInputs[0]), "Deposits root unknown");
         (bool isDeposit, uint amount) = publicInputs[1].signed();
 
         if (!publicInputs[3].eq(ZERO_NULLIFIER)) {
@@ -101,7 +95,7 @@ contract Pool {
         // insert note in merkle tree and calculate new root
         emit NewCommitment(publicInputs[4]);
         noteCommitments.push(publicInputs[4]);
-        depositsRoot = newDepositRoot;
+        _insert(publicInputs[4]);
 
         if (isDeposit) {
             // pull USDC
@@ -118,8 +112,7 @@ contract Pool {
         Field salt,
         bytes memory stealthAddressOwnershipZkProof,
         Field noteCommitment,
-        bytes memory noteCreationZkProof,
-        Field newDepositRoot
+        bytes memory noteCreationZkProof
     ) external {
         require(
             hash2Verifier.verify(stealthAddressOwnershipZkProof, salt.toArr()),
@@ -127,12 +120,7 @@ contract Pool {
         );
         StealthAddress wallet = _deployIfNeeded(salt.toBytes32());
         wallet.transferErc20(token, address(this), balance);
-        _createDepositUsingHash3(
-            balance,
-            noteCommitment,
-            noteCreationZkProof,
-            newDepositRoot
-        );
+        _createDepositUsingHash3(balance, noteCommitment, noteCreationZkProof);
     }
 
     function compute(Field salt) public view returns (address stealthAddress) {
@@ -169,8 +157,7 @@ contract Pool {
     function _createDepositUsingHash3(
         uint amount,
         Field noteCommitment,
-        bytes memory proof,
-        Field newDepositRoot
+        bytes memory proof
     ) internal {
         // verify that amount is in note commitment preimage using the zk proof
         Field[] memory publicInputs = new Field[](2);
@@ -188,15 +175,14 @@ contract Pool {
         // proving the new deposit root will cause mutex issue hence
         // we have to do poseidon2 in solidity to allow parallel users.
         noteCommitments.push(noteCommitment);
-        depositsRoot = newDepositRoot;
+        _insert(noteCommitment);
     }
 
     // proving split join takes about 5 seconds
     function _createDepositUsingSplitJoin(
         uint amount,
         Field noteCommitment,
-        bytes memory proof,
-        Field newDepositRoot
+        bytes memory proof
     ) internal {
         // verify that amount is in note commitment preimage using the zk proof
         Field[] memory publicInputs = new Field[](6);
@@ -218,6 +204,6 @@ contract Pool {
         // proving the new deposit root will cause mutex issue hence
         // we have to do poseidon2 in solidity to allow parallel users.
         noteCommitments.push(noteCommitment);
-        depositsRoot = newDepositRoot;
+        _insert(noteCommitment);
     }
 }

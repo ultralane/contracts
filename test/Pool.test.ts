@@ -22,7 +22,7 @@ describe("Pool", function () {
     await usdc.transfer(otherAccount, parseUnits("1000", 6));
 
     const splitJoinVerifier = await hre.ethers.deployContract(
-      "SplitJoin16Verifier"
+      "SplitJoin16Verifier",
     );
     const hash2Verifier = await hre.ethers.deployContract("Hash2Verifier");
     const noteVerifier = await hre.ethers.deployContract("NoteVerifier");
@@ -49,7 +49,7 @@ describe("Pool", function () {
       const { pool, splitJoinVerifier } = await loadFixture(setup);
 
       expect(await pool.splitJoinVerifier()).to.equal(
-        await splitJoinVerifier.getAddress()
+        await splitJoinVerifier.getAddress(),
       );
     });
 
@@ -57,7 +57,7 @@ describe("Pool", function () {
       const { pool, hash2Verifier } = await loadFixture(setup);
 
       expect(await pool.hash2Verifier()).to.equal(
-        await hash2Verifier.getAddress()
+        await hash2Verifier.getAddress(),
       );
     });
   });
@@ -95,7 +95,7 @@ describe("Pool", function () {
       let depositAmount = parseUnits("100", 6);
 
       const tree = new NoteMerkleTree(16);
-      await pool.setDepositsRoot(await tree.calculateRootHex());
+      // await pool.setDepositsRoot(await tree.calculateRootHex());
 
       const tx = await tree.createTransaction({
         inputNotes: [],
@@ -106,7 +106,7 @@ describe("Pool", function () {
       const { proof, publicInputs } = await tx.prove();
       const updatedDepositRoot = await tree.calculateRootHex();
       await usdc.approve(pool, depositAmount);
-      await pool.transact(proof, publicInputs, updatedDepositRoot);
+      await pool.transact(proof, publicInputs);
     });
 
     it("Should withdraw", async function () {
@@ -135,12 +135,10 @@ describe("Pool", function () {
       });
       const { proof, publicInputs } = await tx.prove();
       const updatedDepositRoot = await tree.calculateRootHex();
-      expect(
-        pool.transact(proof, publicInputs, updatedDepositRoot)
-      ).changeTokenBalances(
+      expect(pool.transact(proof, publicInputs)).changeTokenBalances(
         usdc,
         [withdrawAddress, await pool.getAddress()],
-        [withdrawAmount, initialPoolBalance - withdrawAmount]
+        [withdrawAmount, initialPoolBalance - withdrawAmount],
       );
     });
   });
@@ -155,11 +153,11 @@ describe("Pool", function () {
       const { address, salt } = await keypair.deriveStealthAddress(
         0,
         pool,
-        initCodeHash
+        initCodeHash,
       );
       const stealthProof = await logtime(
         () => keypair.proveStealthAddressOwnership(0),
-        "stealthProof"
+        "stealthProof",
       );
 
       const amt = parseUnits("100", 6);
@@ -184,12 +182,11 @@ describe("Pool", function () {
           stealthProof.proof,
           (await note.commitment()).hex(),
           noteProof.proof,
-          await tree.calculateRootHex()
-        )
+        ),
       ).changeTokenBalances(
         usdc,
         [await pool.getAddress(), address],
-        [amt, -1n * amt]
+        [amt, -1n * amt],
       );
     });
   });
