@@ -1,9 +1,9 @@
 import { HardhatRuntimeEnvironment } from "hardhat/types";
 import { DeployFunction } from "hardhat-deploy/types";
-import { ZeroAddress } from "ethers";
+import { ZeroAddress, ZeroHash } from "ethers";
 
 module.exports = async function ({
-  deployments: { deploy, get },
+  deployments: { deterministic, get },
   getNamedAccounts,
 }: HardhatRuntimeEnvironment) {
   const { deployer } = await getNamedAccounts();
@@ -13,7 +13,7 @@ module.exports = async function ({
   const NoteVerifier = await get("NoteVerifier");
   const USDC = await get("USDC");
 
-  await deploy("Pool", {
+  const { deploy, address } = await deterministic("Pool", {
     from: deployer,
     log: true,
     args: [
@@ -22,7 +22,10 @@ module.exports = async function ({
       NoteVerifier.address,
       USDC.address,
     ],
+    salt: ZeroHash,
   });
+
+  await deploy();
 };
 
 module.exports.tags = ["Pool"];
