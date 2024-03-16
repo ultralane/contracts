@@ -6,7 +6,7 @@ dependsOn:
 
 tasks:
   install:
-    command: 'pnpm install'
+    command: 'pnpm install && pnpm link ../circuits && pnpm link ../sdk'
   build:
     command: 'pnpm run compile'
     deps:
