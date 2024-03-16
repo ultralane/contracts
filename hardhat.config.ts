@@ -25,6 +25,10 @@ const config: HardhatUserConfig = {
       url: `https://arb-sepolia.g.alchemy.com/v2/${process.env.ALCHEMY_KEY}`,
       accounts: [process.env.PK as string],
     },
+    opsep: {
+      url: `https://opt-sepolia.g.alchemy.com/v2/${process.env.ALCHEMY_KEY}`,
+      accounts: [process.env.PK as string],
+    },
   },
   namedAccounts: {
     deployer: {
