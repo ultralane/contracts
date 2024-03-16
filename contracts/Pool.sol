@@ -56,6 +56,7 @@ contract Pool is MerkleTreeWithHistory {
         hash2Verifier = _hash2Verifier;
         noteVerifier = _noteVerifier;
         usdc = _usdc;
+        noteCommitments.push(ZERO_COMMITMENT);
         _insert(ZERO_COMMITMENT);
     }
 
@@ -125,6 +126,22 @@ contract Pool is MerkleTreeWithHistory {
 
     function compute(Field salt) public view returns (address stealthAddress) {
         return Create2.computeAddress(salt.toBytes32(), INIT_CODE_HASH);
+    }
+
+    function allNoteCommitments() public view returns (Field[] memory) {
+        return noteCommitments;
+    }
+
+    function noteCommitmentsLength() public view returns (uint256) {
+        return noteCommitments.length;
+    }
+
+    function noteCommitmentsPaginated(uint start, uint length) public view returns (Field[] memory) {
+        Field[] memory result = new Field[](length);
+        for (uint i = 0; i < length; i++) {
+            result[i] = noteCommitments[start + i];
+        }
+        return result;
     }
 
     function _deployIfNeeded(bytes32 salt) internal returns (StealthAddress) {
