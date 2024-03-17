@@ -17,7 +17,7 @@ module.exports = async function ({
     switch (network.name) {
       case "sepolia":
         return "0xfFAEF09B3cd11D9b20d1a19bECca54EEC2884766";
-      case "scrollsepolia":
+      case "scrollsep":
         return "0x3C5154a193D6e2955650f9305c8d80c18C814A68";
       case "mumbai":
         return "0x2d1889fe5B092CD988972261434F7E5f26041115";

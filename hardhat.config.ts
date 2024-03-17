@@ -29,6 +29,14 @@ const config: HardhatUserConfig = {
       url: `https://opt-sepolia.g.alchemy.com/v2/${process.env.ALCHEMY_KEY}`,
       accounts: [process.env.PK as string],
     },
+    scrollsep: {
+      url: `https://sepolia-rpc.scroll.io`,
+      accounts: [process.env.PK as string],
+    },
+    mumbai: {
+      url: `https://polygon-mumbai.g.alchemy.com/v2/${process.env.ALCHEMY_KEY}`,
+      accounts: [process.env.PK as string],
+    },
   },
   namedAccounts: {
     deployer: {
