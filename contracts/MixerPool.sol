@@ -95,9 +95,9 @@ abstract contract MixerPool is MerkleTreeWithHistory, Ownable {
         );
 
         // insert note in merkle tree and calculate new root
-        emit NewCommitment(publicInputs[4]);
-        noteCommitments.push(publicInputs[4]);
-        _insert(publicInputs[4]);
+        emit NewCommitment(publicInputs[5]);
+        noteCommitments.push(publicInputs[5]);
+        _insert(publicInputs[5]);
 
         if (isDeposit) {
             // pull USDC
