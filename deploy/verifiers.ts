@@ -26,6 +26,11 @@ module.exports = async function ({
     from: deployer,
     log: true,
   });
+
+  await deploy("Input16Verifier", {
+    from: deployer,
+    log: true,
+  });
 };
 
 module.exports.tags = [
@@ -33,4 +38,5 @@ module.exports.tags = [
   "SplitJoin32Verifier",
   "Hash2Verifier",
   "NoteVerifier",
+  "Input16Verifier",
 ];

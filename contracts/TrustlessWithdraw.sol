@@ -98,27 +98,33 @@ abstract contract TrustlessWithdraw is MixerPool {
         request.amount = amount;
         emit TrustlessWithdrawInit(user, nullifier, amount);
 
-        for (uint256 i = 0; i < chains.length; i++) {
-            uint32 chainId = uint32(chains[i].chainId);
-            address remoteAddress = chains[i].ultralane;
-            if (chainId == block.chainid) continue;
-            bytes memory queryData = abi.encode(requestId, nullifier);
-            bytes memory message = abi.encode(
-                CrosschanMessageType.Query,
-                queryData
-            );
-            bytes32 _remoteAddress;
-            assembly {
-                _remoteAddress := remoteAddress
+        if (address(mailbox) != address(0)) {
+            for (uint256 i = 0; i < chains.length; i++) {
+                uint32 chainId = uint32(chains[i].chainId);
+                address remoteAddress = chains[i].ultralane;
+                if (chainId == block.chainid) continue;
+                bytes memory queryData = abi.encode(requestId, nullifier);
+                bytes memory message = abi.encode(
+                    CrosschanMessageType.Query,
+                    queryData
+                );
+                bytes32 _remoteAddress;
+                assembly {
+                    _remoteAddress := remoteAddress
+                }
+                // query: is this nullifier spent on your chain?
+                uint256 value = mailbox.quoteDispatch(
+                    chainId,
+                    _remoteAddress,
+                    message
+                );
+                totalValue += value;
+                mailbox.dispatch{value: value}(
+                    chainId,
+                    _remoteAddress,
+                    message
+                );
             }
-            // query: is this nullifier spent on your chain?
-            uint256 value = mailbox.quoteDispatch(
-                chainId,
-                _remoteAddress,
-                message
-            );
-            totalValue += value;
-            mailbox.dispatch{value: value}(chainId, _remoteAddress, message);
         }
     }
 

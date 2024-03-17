@@ -22,7 +22,7 @@ describe("Ultralane", function () {
     await usdc.transfer(otherAccount, parseUnits("1000", 6));
 
     const splitJoinVerifier = await hre.ethers.deployContract(
-      "SplitJoin16Verifier"
+      "SplitJoin16Verifier",
     );
     const hash2Verifier = await hre.ethers.deployContract("Hash2Verifier");
     const noteVerifier = await hre.ethers.deployContract("NoteVerifier");
@@ -52,7 +52,7 @@ describe("Ultralane", function () {
       const { ultralane, splitJoinVerifier } = await loadFixture(setup);
 
       expect(await ultralane.splitJoinVerifier()).to.equal(
-        await splitJoinVerifier.getAddress()
+        await splitJoinVerifier.getAddress(),
       );
     });
 
@@ -60,7 +60,7 @@ describe("Ultralane", function () {
       const { ultralane, hash2Verifier } = await loadFixture(setup);
 
       expect(await ultralane.hash2Verifier()).to.equal(
-        await hash2Verifier.getAddress()
+        await hash2Verifier.getAddress(),
       );
     });
   });
@@ -141,7 +141,7 @@ describe("Ultralane", function () {
       expect(ultralane.transact(proof, publicInputs)).changeTokenBalances(
         usdc,
         [withdrawAddress, await ultralane.getAddress()],
-        [withdrawAmount, initialPoolBalance - withdrawAmount]
+        [withdrawAmount, initialPoolBalance - withdrawAmount],
       );
     });
   });
@@ -156,11 +156,11 @@ describe("Ultralane", function () {
       const { address, salt } = await keypair.deriveStealthAddress(
         0,
         ultralane,
-        initCodeHash
+        initCodeHash,
       );
       const stealthProof = await logtime(
         () => keypair.proveStealthAddressOwnership(0),
-        "stealthProof"
+        "stealthProof",
       );
 
       const amt = parseUnits("100", 6);
@@ -184,12 +184,12 @@ describe("Ultralane", function () {
           salt.hex(),
           stealthProof.proof,
           (await note.commitment()).hex(),
-          noteProof.proof
-        )
+          noteProof.proof,
+        ),
       ).changeTokenBalances(
         usdc,
         [await ultralane.getAddress(), address],
-        [amt, -1n * amt]
+        [amt, -1n * amt],
       );
     });
   });
