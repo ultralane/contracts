@@ -1,11 +1,7 @@
-import {
-  time,
-  loadFixture,
-} from "@nomicfoundation/hardhat-toolbox/network-helpers";
+import { loadFixture } from "@nomicfoundation/hardhat-toolbox/network-helpers";
 import { expect } from "chai";
 import "@nomicfoundation/hardhat-chai-matchers";
 import hre from "hardhat";
-import { HardhatEthersHelpers } from "@nomicfoundation/hardhat-ethers/types";
 import { Field, hash } from "@ultralane/sdk";
 import { toBeHex, zeroPadValue } from "ethers";
 
@@ -33,7 +29,7 @@ describe("Poseidon2", function () {
       const { poseidon2 } = await loadFixture(setup);
       const expected = await hash([input1, input2]);
       const actual = await poseidon2.hash_2(input1.hex(), input2.hex());
-      expect(toBeHex(actual)).to.equal(expected.hex());
+      expect(zeroPadValue(toBeHex(actual), 32)).to.equal(expected.hex());
       //   console.log(
       //     await poseidon2.hash_2.estimateGas(input1.hex(), input2.hex()),
       //   );
@@ -50,9 +46,9 @@ describe("Poseidon2", function () {
       const actual = await poseidon2.hash_3(
         input1.hex(),
         input2.hex(),
-        input3.hex(),
+        input3.hex()
       );
-      expect(toBeHex(actual)).to.equal(expected.hex());
+      expect(zeroPadValue(toBeHex(actual), 32)).to.equal(expected.hex());
       //   console.log(
       //     await poseidon2.hash_3.estimateGas(
       //       input1.hex(),

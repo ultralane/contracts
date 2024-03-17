@@ -4,9 +4,9 @@ import "@nomicfoundation/hardhat-chai-matchers";
 import hre from "hardhat";
 import { HardhatEthersHelpers } from "@nomicfoundation/hardhat-ethers/types";
 import { Field, KeyPair, Note, NoteMerkleTree, logtime } from "@ultralane/sdk";
-import { hexlify, parseUnits, randomBytes } from "ethers";
+import { ZeroAddress, hexlify, parseUnits, randomBytes } from "ethers";
 
-describe("Pool", function () {
+describe("Ultralane", function () {
   let ethers = hre.ethers as any as HardhatEthersHelpers;
   // We define a fixture to reuse the same setup in every test.
   // We use loadFixture to run this setup once, snapshot that state,
@@ -22,19 +22,22 @@ describe("Pool", function () {
     await usdc.transfer(otherAccount, parseUnits("1000", 6));
 
     const splitJoinVerifier = await hre.ethers.deployContract(
-      "SplitJoin16Verifier",
+      "SplitJoin16Verifier"
     );
     const hash2Verifier = await hre.ethers.deployContract("Hash2Verifier");
     const noteVerifier = await hre.ethers.deployContract("NoteVerifier");
-    const pool = await hre.ethers.deployContract("Pool", [
+    const input16Verifier = await hre.ethers.deployContract("Input16Verifier");
+    const ultralane = await hre.ethers.deployContract("Ultralane", [
+      usdc,
       splitJoinVerifier,
       hash2Verifier,
       noteVerifier,
-      usdc,
+      input16Verifier,
+      ZeroAddress,
     ]);
 
     return {
-      pool,
+      ultralane,
       splitJoinVerifier,
       hash2Verifier,
       usdc,
@@ -46,18 +49,18 @@ describe("Pool", function () {
 
   describe("Deployment", function () {
     it("Should set the splitJoinVerifier", async function () {
-      const { pool, splitJoinVerifier } = await loadFixture(setup);
+      const { ultralane, splitJoinVerifier } = await loadFixture(setup);
 
-      expect(await pool.splitJoinVerifier()).to.equal(
-        await splitJoinVerifier.getAddress(),
+      expect(await ultralane.splitJoinVerifier()).to.equal(
+        await splitJoinVerifier.getAddress()
       );
     });
 
     it("Should set the hash2Verifier", async function () {
-      const { pool, hash2Verifier } = await loadFixture(setup);
+      const { ultralane, hash2Verifier } = await loadFixture(setup);
 
-      expect(await pool.hash2Verifier()).to.equal(
-        await hash2Verifier.getAddress(),
+      expect(await ultralane.hash2Verifier()).to.equal(
+        await hash2Verifier.getAddress()
       );
     });
   });
@@ -90,7 +93,7 @@ describe("Pool", function () {
 
   describe("Transact", function () {
     it("Should deposit", async function () {
-      const { pool, usdc, keypair } = await loadFixture(setup);
+      const { ultralane, usdc, keypair } = await loadFixture(setup);
 
       let depositAmount = parseUnits("100", 6);
 
@@ -105,12 +108,12 @@ describe("Pool", function () {
       });
       const { proof, publicInputs } = await tx.prove();
       const updatedDepositRoot = await tree.calculateRootHex();
-      await usdc.approve(pool, depositAmount);
-      await pool.transact(proof, publicInputs);
+      await usdc.approve(ultralane, depositAmount);
+      await ultralane.transact(proof, publicInputs);
     });
 
     it("Should withdraw", async function () {
-      const { pool, usdc, keypair, owner } = await loadFixture(setup);
+      const { ultralane, usdc, keypair, owner } = await loadFixture(setup);
 
       const tree = new NoteMerkleTree(16);
       const initialPoolBalance = parseUnits("100", 6);
@@ -122,7 +125,7 @@ describe("Pool", function () {
         updateTree: true,
       });
       // await pool.setDepositsRoot(await tree.calculateRootHex());
-      await usdc.transfer(pool, initialPoolBalance);
+      await usdc.transfer(ultralane, initialPoolBalance);
 
       const withdrawAddress = randomAddress();
       const withdrawAmount = parseUnits("40", 6);
@@ -135,29 +138,29 @@ describe("Pool", function () {
       });
       const { proof, publicInputs } = await tx.prove();
       const updatedDepositRoot = await tree.calculateRootHex();
-      expect(pool.transact(proof, publicInputs)).changeTokenBalances(
+      expect(ultralane.transact(proof, publicInputs)).changeTokenBalances(
         usdc,
-        [withdrawAddress, await pool.getAddress()],
-        [withdrawAmount, initialPoolBalance - withdrawAmount],
+        [withdrawAddress, await ultralane.getAddress()],
+        [withdrawAmount, initialPoolBalance - withdrawAmount]
       );
     });
   });
 
   describe("Collect", function () {
     it("Should collect", async function () {
-      const { pool, usdc, keypair, owner, otherAccount } =
+      const { ultralane, usdc, keypair, owner, otherAccount } =
         await loadFixture(setup);
 
-      const initCodeHash = await pool.INIT_CODE_HASH();
+      const initCodeHash = await ultralane.INIT_CODE_HASH();
 
       const { address, salt } = await keypair.deriveStealthAddress(
         0,
-        pool,
-        initCodeHash,
+        ultralane,
+        initCodeHash
       );
       const stealthProof = await logtime(
         () => keypair.proveStealthAddressOwnership(0),
-        "stealthProof",
+        "stealthProof"
       );
 
       const amt = parseUnits("100", 6);
@@ -175,18 +178,18 @@ describe("Pool", function () {
       // const noteProof = await logtime(() => tx.prove(), "noteProof");
 
       await expect(
-        pool.collect(
+        ultralane.collect(
           usdc,
           amt,
           salt.hex(),
           stealthProof.proof,
           (await note.commitment()).hex(),
-          noteProof.proof,
-        ),
+          noteProof.proof
+        )
       ).changeTokenBalances(
         usdc,
-        [await pool.getAddress(), address],
-        [amt, -1n * amt],
+        [await ultralane.getAddress(), address],
+        [amt, -1n * amt]
       );
     });
   });

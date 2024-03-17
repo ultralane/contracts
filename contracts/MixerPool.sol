@@ -9,7 +9,7 @@ import {StealthAddress} from "./StealthAddress.sol";
 import {MerkleTreeWithHistory} from "./MerkleTreeWithHistory.sol";
 import "hardhat/console.sol";
 
-contract Pool is MerkleTreeWithHistory {
+contract MixerPool is MerkleTreeWithHistory {
     using ImplField for Field;
     using ImplField for uint256;
     using ImplField for int256;
@@ -47,15 +47,15 @@ contract Pool is MerkleTreeWithHistory {
     event NullifierSpent(Field commitment);
 
     constructor(
+        IERC20 _usdc,
         SplitJoin16Verifier _splitJoinVerifier,
         Hash2Verifier _hash2Verifier,
-        NoteVerifier _noteVerifier,
-        IERC20 _usdc
+        NoteVerifier _noteVerifier
     ) MerkleTreeWithHistory(16) {
+        usdc = _usdc;
         splitJoinVerifier = _splitJoinVerifier;
         hash2Verifier = _hash2Verifier;
         noteVerifier = _noteVerifier;
-        usdc = _usdc;
         noteCommitments.push(ZERO_COMMITMENT);
         _insert(ZERO_COMMITMENT);
     }
@@ -136,7 +136,10 @@ contract Pool is MerkleTreeWithHistory {
         return noteCommitments.length;
     }
 
-    function noteCommitmentsPaginated(uint start, uint length) public view returns (Field[] memory) {
+    function noteCommitmentsPaginated(
+        uint start,
+        uint length
+    ) public view returns (Field[] memory) {
         Field[] memory result = new Field[](length);
         for (uint i = 0; i < length; i++) {
             result[i] = noteCommitments[start + i];
