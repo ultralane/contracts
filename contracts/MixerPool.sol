@@ -112,15 +112,14 @@ abstract contract MixerPool is MerkleTreeWithHistory, Ownable {
     function crosschainTransact(
         address destination,
         uint amount,
-        Field[2] memory nullifiers,
+        Field[] memory nullifiers,
         Field noteCommitment
     ) external onlyOwner {
-        require(!isNoteSpent[nullifiers[0]], "Note 1 is spent");
-        require(!isNoteSpent[nullifiers[1]], "Note 2 is spent");
-        isNoteSpent[nullifiers[0]] = true;
-        isNoteSpent[nullifiers[1]] = true;
-        emit NullifierSpent(nullifiers[0]);
-        emit NullifierSpent(nullifiers[1]);
+        for(uint i; i < nullifiers.length; i++) {
+            require(!isNoteSpent[nullifiers[i]], "Note is already spent");
+            isNoteSpent[nullifiers[i]] = true;
+            emit NullifierSpent(nullifiers[i]);
+        }
 
         _insert(noteCommitment);
         emit NewCommitment(noteCommitment);
