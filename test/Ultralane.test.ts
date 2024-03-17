@@ -22,12 +22,14 @@ describe("Ultralane", function () {
     await usdc.transfer(otherAccount, parseUnits("1000", 6));
 
     const splitJoinVerifier = await hre.ethers.deployContract(
-      "SplitJoin16Verifier",
+      "SplitJoin16Verifier"
     );
     const hash2Verifier = await hre.ethers.deployContract("Hash2Verifier");
     const noteVerifier = await hre.ethers.deployContract("NoteVerifier");
     const input16Verifier = await hre.ethers.deployContract("Input16Verifier");
+
     const ultralane = await hre.ethers.deployContract("Ultralane", [
+      owner,
       usdc,
       splitJoinVerifier,
       hash2Verifier,
@@ -35,7 +37,6 @@ describe("Ultralane", function () {
       input16Verifier,
       ZeroAddress,
     ]);
-
     return {
       ultralane,
       splitJoinVerifier,
@@ -52,7 +53,7 @@ describe("Ultralane", function () {
       const { ultralane, splitJoinVerifier } = await loadFixture(setup);
 
       expect(await ultralane.splitJoinVerifier()).to.equal(
-        await splitJoinVerifier.getAddress(),
+        await splitJoinVerifier.getAddress()
       );
     });
 
@@ -60,7 +61,7 @@ describe("Ultralane", function () {
       const { ultralane, hash2Verifier } = await loadFixture(setup);
 
       expect(await ultralane.hash2Verifier()).to.equal(
-        await hash2Verifier.getAddress(),
+        await hash2Verifier.getAddress()
       );
     });
   });
@@ -141,7 +142,7 @@ describe("Ultralane", function () {
       expect(ultralane.transact(proof, publicInputs)).changeTokenBalances(
         usdc,
         [withdrawAddress, await ultralane.getAddress()],
-        [withdrawAmount, initialPoolBalance - withdrawAmount],
+        [withdrawAmount, initialPoolBalance - withdrawAmount]
       );
     });
   });
@@ -156,11 +157,11 @@ describe("Ultralane", function () {
       const { address, salt } = await keypair.deriveStealthAddress(
         0,
         ultralane,
-        initCodeHash,
+        initCodeHash
       );
       const stealthProof = await logtime(
         () => keypair.proveStealthAddressOwnership(0),
-        "stealthProof",
+        "stealthProof"
       );
 
       const amt = parseUnits("100", 6);
@@ -184,13 +185,42 @@ describe("Ultralane", function () {
           salt.hex(),
           stealthProof.proof,
           (await note.commitment()).hex(),
-          noteProof.proof,
-        ),
+          noteProof.proof
+        )
       ).changeTokenBalances(
         usdc,
         [await ultralane.getAddress(), address],
-        [amt, -1n * amt],
+        [amt, -1n * amt]
       );
+    });
+  });
+
+  describe("Trustless withdraw", async function () {
+    it("Should withdraw", async function () {
+      const { ultralane, usdc, keypair, owner, otherAccount } =
+        await loadFixture(setup);
+
+      // make a deposit
+      let depositAmount = parseUnits("100", 6);
+      const tree = new NoteMerkleTree(16);
+      const tx = await tree.createTransaction({
+        inputNotes: [],
+        keypair,
+        updateTree: true,
+        depositAmount,
+      });
+      const { proof, publicInputs } = await tx.prove();
+      await usdc.approve(ultralane, depositAmount);
+      await ultralane.transact(proof, publicInputs);
+
+      const input = await tree.createInput(tx.outputs[0]);
+      const inputProof = await input.prove(ZeroAddress);
+      await expect(
+        ultralane.trustlessWithdrawInit(
+          inputProof.proof,
+          inputProof.publicInputs
+        )
+      ).to.emit(ultralane, "TrustlessWithdrawInit");
     });
   });
 });
