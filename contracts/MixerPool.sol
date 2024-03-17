@@ -108,14 +108,24 @@ abstract contract MixerPool is MerkleTreeWithHistory, Ownable {
         }
     }
 
+    // ultralane network verifies the zk proofs offchain and calls this function
     function crosschainTransact(
         address destination,
         uint amount,
-        Field nullifier
+        Field[2] memory nullifiers,
+        Field noteCommitment
     ) external onlyOwner {
-        require(!isNoteSpent[nullifier], "Note is spent");
-        isNoteSpent[nullifier] = true;
-        emit NullifierSpent(nullifier);
+        require(!isNoteSpent[nullifiers[0]], "Note 1 is spent");
+        require(!isNoteSpent[nullifiers[1]], "Note 2 is spent");
+        isNoteSpent[nullifiers[0]] = true;
+        isNoteSpent[nullifiers[1]] = true;
+        emit NullifierSpent(nullifiers[0]);
+        emit NullifierSpent(nullifiers[1]);
+
+        _insert(noteCommitment);
+        emit NewCommitment(noteCommitment);
+        noteCommitments.push(noteCommitment);
+
         usdc.transfer(destination, amount);
     }
 
