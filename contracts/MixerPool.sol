@@ -4,11 +4,10 @@ pragma solidity ^0.8.24;
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {Create2} from "@openzeppelin/contracts/utils/Create2.sol";
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
-import {Field, ImplField} from "./libraries/Field.sol";
+import {Field, ImplField} from "./Field.sol";
 import {SplitJoin16Verifier, Hash2Verifier, NoteVerifier} from "./Verifier.sol";
 import {StealthAddress} from "./StealthAddress.sol";
 import {MerkleTreeWithHistory} from "./MerkleTreeWithHistory.sol";
-import "hardhat/console.sol";
 
 abstract contract MixerPool is MerkleTreeWithHistory, Ownable {
     using ImplField for Field;

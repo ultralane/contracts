@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.24;
 
-import {Field, ImplField} from "../libraries/Field.sol";
-import {Poseidon2} from "../libraries/Poseidon2.sol";
+import {Field, ImplField} from "../Field.sol";
+import {Poseidon2} from "../Poseidon2.sol";
 
 contract Poseidon2Test {
     using ImplField for Field;

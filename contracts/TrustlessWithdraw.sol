@@ -3,7 +3,7 @@ pragma solidity ^0.8.24;
 
 import {IMailbox} from "@hyperlane-xyz/core/contracts/interfaces/IMailbox.sol";
 
-import {Field, ImplField} from "./libraries/Field.sol";
+import {Field, ImplField} from "./Field.sol";
 import {MixerPool} from "./MixerPool.sol";
 import {Input16Verifier} from "./Verifier.sol";
 import {MerkleTreeWithHistory} from "./MerkleTreeWithHistory.sol";

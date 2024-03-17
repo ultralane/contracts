@@ -3,6 +3,8 @@ pragma solidity ^0.8.24;
 
 import {Field, ImplField} from "./Field.sol";
 
+// Poseidon2 hash function
+// credits: https://github.com/noir-lang/noir/blob/d8710c4442be2fcffc348f1f5776bc278d028ad0/acvm-repo/bn254_blackbox_solver/src/poseidon2.rs
 library Poseidon2 {
     using ImplField for Field;
     using Poseidon2 for Sponge;
@@ -110,27 +112,6 @@ library Poseidon2 {
     /**
      * Internal methods for hashing
      */
-
-    // function hash_internal(
-    //     Poseidon2.Sponge memory sponge,
-    //     Field[] memory input,
-    //     uint std_input_length,
-    //     bool is_variable_length
-    // ) private pure returns (Field) {
-    //     for (uint i; i < input.length; i++) {
-    //         if (i < std_input_length) {
-    //             sponge.absorb(input[i]);
-    //         }
-    //     }
-
-    //     // In the case where the hash preimage is variable-length, we append `1` to the end of the input, to distinguish
-    //     // from fixed-length hashes. (the combination of this additional field element + the hash IV ensures
-    //     // fixed-length and variable-length hashes do not collide)
-    //     if (is_variable_length) {
-    //         sponge.absorb(Field.wrap(1));
-    //     }
-    //     return sponge.squeeze();
-    // }
 
     function generate_iv(uint input_length) internal pure returns (Field) {
         return Field.wrap(input_length << 64);
@@ -1297,3 +1278,4 @@ library Poseidon2 {
         });
     }
 }
+
