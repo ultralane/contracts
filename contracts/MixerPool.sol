@@ -68,7 +68,10 @@ abstract contract MixerPool is MerkleTreeWithHistory, Ownable {
         _createDepositUsingHash3(amount, noteCommitment, proof);
     }
 
-    // proving split join takes about 5 seconds
+    /// @notice Enables to send shielded funds to an ethereum address
+    /// @dev proving split join takes about 5 seconds
+    /// @param proof: zk proof that the two notes are valid and unspent
+    /// @param publicInputs: [ROOT, AMOUNT, EVM_ADDRESS, NULLIFIER, NULLIFIER, COMMITMENT]
     function transact(
         bytes memory proof,
         Field[] memory publicInputs
@@ -107,7 +110,7 @@ abstract contract MixerPool is MerkleTreeWithHistory, Ownable {
         }
     }
 
-    // ultralane network verifies the zk proofs offchain and calls this function
+    /// @dev ultralane network verifies the zk proofs offchain and calls this function
     function crosschainTransact(
         address destination,
         uint amount,
@@ -127,6 +130,13 @@ abstract contract MixerPool is MerkleTreeWithHistory, Ownable {
         usdc.transfer(destination, amount);
     }
 
+    /// @notice Collect funds into the privacy layer
+    /// @param token: erc20 token that is present on the stealth address
+    /// @param balance: amount of tokens to collect into a UTXO note
+    /// @param salt: hash of private key and a nonce
+    /// @param stealthAddressOwnershipZkProof: salt preimage proof
+    /// @param noteCommitment: hash of the note
+    /// @param noteCreationZkProof: checks to ensure note has the right token and amount
     function collect(
         IERC20 token,
         uint balance,
@@ -136,14 +146,21 @@ abstract contract MixerPool is MerkleTreeWithHistory, Ownable {
         bytes memory noteCreationZkProof
     ) external {
         require(
+            // TODO critical bug: this should also constrain note commitment to
+            // prevent relayer from using a different note.
             hash2Verifier.verify(stealthAddressOwnershipZkProof, salt.toArr()),
             "hash2 zk proof failed"
         );
         StealthAddress wallet = _deployIfNeeded(salt.toBytes32());
         wallet.transferErc20(token, address(this), balance);
+        // TODO the note should include the token not just the balance in 
+        // this PoC usdc seem to be hardcoded. So it depends if the underlying
+        // privacy layer supports multiple tokens along with ETH.
         _createDepositUsingHash3(balance, noteCommitment, noteCreationZkProof);
     }
 
+    /// @notice Compute the stealth address offchain
+    /// @param salt: hash of a private key and a nonce
     function compute(Field salt) public view returns (address stealthAddress) {
         return Create2.computeAddress(salt.toBytes32(), INIT_CODE_HASH);
     }
@@ -193,7 +210,11 @@ abstract contract MixerPool is MerkleTreeWithHistory, Ownable {
         return StealthAddress(payable(computed));
     }
 
-    // proving note takes about 1 sec
+    /// @notice Inserts a deposit note into the huge append-only merkle tree
+    /// @dev proving note takes about 1 sec
+    /// @param amount: amount of tokens
+    /// @param noteCommitment: hash of the note
+    /// @param proof: zk proof that the noteCommitment's preimage contains the right amount
     function _createDepositUsingHash3(
         uint amount,
         Field noteCommitment,
@@ -210,15 +231,11 @@ abstract contract MixerPool is MerkleTreeWithHistory, Ownable {
         );
 
         // insert note in merkle tree and calculate new root
-        // TODO this requires poseidon2 to be implemented in solidity,
-        // temporarily taking this from solidity
-        // proving the new deposit root will cause mutex issue hence
-        // we have to do poseidon2 in solidity to allow parallel users.
         noteCommitments.push(noteCommitment);
         _insert(noteCommitment);
     }
 
-    // proving split join takes about 5 seconds
+    /// @dev proving split join takes about 5 seconds
     function _createDepositUsingSplitJoin(
         uint amount,
         Field noteCommitment,
@@ -239,10 +256,6 @@ abstract contract MixerPool is MerkleTreeWithHistory, Ownable {
         );
 
         // insert note in merkle tree and calculate new root
-        // TODO this requires poseidon2 to be implemented in solidity,
-        // temporarily taking this from solidity
-        // proving the new deposit root will cause mutex issue hence
-        // we have to do poseidon2 in solidity to allow parallel users.
         noteCommitments.push(noteCommitment);
         _insert(noteCommitment);
     }
